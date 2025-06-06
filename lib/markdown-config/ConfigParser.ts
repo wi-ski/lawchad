@@ -3,7 +3,7 @@ import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
-import { WorkflowConfig, WorkflowTrigger, WorkflowStep, RoutingRule, NotificationConfig } from '../../types/WorkflowConfig';
+import { WorkflowConfig, WorkflowTrigger, WorkflowStep, RoutingRule, NotificationConfig, TriggerCondition } from '../../types/WorkflowConfig';
 import { N8nWorkflow, N8nNode, N8nConnections } from '../../types/N8nWorkflow';
 
 export class ConfigParser {
@@ -25,25 +25,25 @@ export class ConfigParser {
       const frontmatter = this.extractFrontmatter(markdownContent);
       
       const workflow: Partial<WorkflowConfig> = {
-        id: frontmatter.id,
-        name: frontmatter.name,
-        description: frontmatter.description,
-        attorneyId: frontmatter.attorneyId,
-        version: frontmatter.version || '1.0.0',
+        id: frontmatter.id as string,
+        name: frontmatter.name as string,
+        description: frontmatter.description as string,
+        attorneyId: frontmatter.attorneyId as string,
+        version: (frontmatter.version as string) || '1.0.0',
         isActive: frontmatter.isActive !== false,
-        createdAt: frontmatter.createdAt ? new Date(frontmatter.createdAt) : new Date(),
-        updatedAt: frontmatter.updatedAt ? new Date(frontmatter.updatedAt) : new Date(),
+        createdAt: frontmatter.createdAt ? new Date(frontmatter.createdAt as string) : new Date(),
+        updatedAt: frontmatter.updatedAt ? new Date(frontmatter.updatedAt as string) : new Date(),
         triggers: this.parseTriggers(sections.triggers || ''),
         steps: this.parseSteps(sections.steps || ''),
         routing: this.parseRouting(sections.routing || ''),
         notifications: this.parseNotifications(sections.notifications || ''),
         customRules: [],
         metadata: {
-          tags: frontmatter.tags || [],
-          category: frontmatter.category || 'general',
-          practiceArea: frontmatter.practiceArea || frontmatter.category || 'general',
-          complexity: frontmatter.complexity || 'medium',
-          requiredApprovals: frontmatter.requiredApprovals || []
+          tags: (frontmatter.tags as string[]) || [],
+          category: (frontmatter.category as string) || 'general',
+          practiceArea: (frontmatter.practiceArea as string) || (frontmatter.category as string) || 'general',
+          complexity: (frontmatter.complexity as 'simple' | 'medium' | 'complex') || 'medium',
+          requiredApprovals: (frontmatter.requiredApprovals as string[]) || []
         }
       };
 
@@ -174,13 +174,13 @@ export class ConfigParser {
     return sections;
   }
 
-  private extractFrontmatter(markdownContent: string): Record<string, any> {
+  private extractFrontmatter(markdownContent: string): Record<string, unknown> {
     const frontmatterMatch = markdownContent.match(/^---\n([\s\S]*?)\n---/);
     if (!frontmatterMatch) {
       return {};
     }
 
-    const frontmatter: Record<string, any> = {};
+    const frontmatter: Record<string, unknown> = {};
     const lines = frontmatterMatch[1].split('\n');
     
     for (const line of lines) {
@@ -205,10 +205,10 @@ export class ConfigParser {
     
     for (const block of triggerBlocks) {
       const lines = block.split('\n');
-      const triggerType = lines[0].trim() as any;
+      const triggerType = lines[0].trim() as string;
       
       const trigger: WorkflowTrigger = {
-        type: triggerType,
+        type: triggerType as 'email_received' | 'slack_message' | 'calendar_event' | 'document_upload' | 'manual_trigger',
         conditions: [],
         priority: 1
       };
@@ -254,7 +254,7 @@ export class ConfigParser {
       
       for (const line of lines) {
         if (line.includes('Type:')) {
-          step.type = line.split(':')[1].trim() as any;
+          step.type = line.split(':')[1].trim() as 'routing' | 'analysis' | 'notification' | 'document_processing' | 'approval' | 'integration';
         } else if (line.includes('Action:')) {
           step.action = line.split(':')[1].trim();
         }
@@ -288,7 +288,7 @@ export class ConfigParser {
         if (line.includes('Target:')) {
           const targetText = line.split(':')[1].trim();
           const [type, identifier] = targetText.split(' - ');
-          rule.target = { type: type as any, identifier };
+          rule.target = { type: type as 'attorney' | 'department' | 'external_system', identifier };
         } else if (line.includes('Priority:')) {
           const priority = parseInt(line.split(':')[1].trim());
           if (!isNaN(priority)) {
@@ -332,11 +332,11 @@ export class ConfigParser {
         if (line.includes('Trigger:')) {
           notification.trigger = line.split(':')[1].trim();
         } else if (line.includes('Channels:')) {
-          notification.channels = line.split(':')[1].trim().split(',').map(c => c.trim()) as any;
+          notification.channels = line.split(':')[1].trim().split(',').map(c => c.trim()) as ('slack' | 'email' | 'sms' | 'calendar')[];
         } else if (line.includes('Recipients:')) {
           notification.recipients = line.split(':')[1].trim().split(',').map(r => r.trim());
         } else if (line.includes('Priority:')) {
-          notification.priority = line.split(':')[1].trim() as any;
+          notification.priority = line.split(':')[1].trim() as 'low' | 'medium' | 'high' | 'urgent';
         }
       }
       
@@ -346,12 +346,12 @@ export class ConfigParser {
     return notifications;
   }
 
-  private parseCondition(conditionText: string): any {
+  private parseCondition(conditionText: string): TriggerCondition | null {
     const parts = conditionText.split(' ');
     if (parts.length >= 3) {
       return {
         field: parts[0],
-        operator: parts[1] as any,
+        operator: parts[1] as 'equals' | 'contains' | 'greater_than' | 'less_than' | 'regex_match' | 'in_list',
         value: parts.slice(2).join(' ').replace(/^["']|["']$/g, '')
       };
     }

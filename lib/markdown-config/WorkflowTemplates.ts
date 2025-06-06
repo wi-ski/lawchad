@@ -66,7 +66,7 @@ export class WorkflowTemplates {
     templateId: string,
     attorneyId: string,
     description: string,
-    parameters: Record<string, any>
+    parameters: Record<string, unknown>
   ): Promise<string> {
     if (!this.isInitialized) {
       await this.initialize();
@@ -484,7 +484,7 @@ ${config.notifications?.map(notification => `
     template: WorkflowTemplate,
     attorneyId: string,
     description: string,
-    parameters: Record<string, any>
+    _parameters: Record<string, unknown>
   ): Partial<WorkflowConfig> {
     return {
       id: `${template.id}_${attorneyId}_${Date.now()}`,

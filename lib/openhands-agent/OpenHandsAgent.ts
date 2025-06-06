@@ -7,8 +7,9 @@ export class OpenHandsAgent {
   private isInitialized: boolean = false;
 
   constructor() {
+    const apiKey = process.env.OPENAI_API_KEY || 'test_key_for_development';
     this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: apiKey,
     });
   }
 
@@ -295,7 +296,7 @@ export class OpenHandsAgent {
     `;
   }
 
-  private async parseEmailAnalysis(analysisText: string, emailData: EmailData): Promise<EmailAnalysis> {
+  private async parseEmailAnalysis(analysisText: string, _emailData: EmailData): Promise<EmailAnalysis> {
     const lines = analysisText.split('\n');
     const analysis: EmailAnalysis = {
       emailType: {
@@ -362,7 +363,7 @@ export class OpenHandsAgent {
     return completion.choices[0]?.message?.content || '';
   }
 
-  private async generateWorkflowChanges(updateAnalysis: string): Promise<string[]> {
+  private async generateWorkflowChanges(_updateAnalysis: string): Promise<string[]> {
     return [
       'Workflow configuration updated',
       'New routing rules applied',
@@ -382,7 +383,7 @@ export class OpenHandsAgent {
     `;
   }
 
-  private async parseWorkflowActions(workflowText: string): Promise<WorkflowAction[]> {
+  private async parseWorkflowActions(_workflowText: string): Promise<WorkflowAction[]> {
     const actions: WorkflowAction[] = [
       {
         type: 'email_route',

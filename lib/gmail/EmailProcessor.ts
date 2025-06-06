@@ -114,7 +114,7 @@ export class EmailProcessor {
         return null;
       }
 
-      return this.convertGmailToEmailData(message);
+      return this.convertGmailToEmailData(message as Record<string, unknown>);
 
     } catch (error) {
       console.error(`❌ Error fetching email ${messageId}:`, error);
@@ -122,38 +122,42 @@ export class EmailProcessor {
     }
   }
 
-  private convertGmailToEmailData(gmailMessage: any): EmailData {
-    const headers = gmailMessage.payload?.headers || [];
-    const getHeader = (name: string) => headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase())?.value || '';
+  private convertGmailToEmailData(gmailMessage: Record<string, unknown>): EmailData {
+    const payload = gmailMessage.payload as Record<string, unknown>;
+    const headers = (payload?.headers as Record<string, unknown>[]) || [];
+    const getHeader = (name: string) => headers.find((h: Record<string, unknown>) => (h.name as string)?.toLowerCase() === name.toLowerCase())?.value as string || '';
 
     const emailData: EmailData = {
-      id: gmailMessage.id || '',
+      id: (gmailMessage.id as string) || '',
       messageId: getHeader('Message-ID'),
-      threadId: gmailMessage.threadId,
+      threadId: (gmailMessage.threadId as string),
       subject: getHeader('Subject'),
       sender: getHeader('From'),
       recipients: [getHeader('To'), getHeader('Cc'), getHeader('Bcc')].filter(Boolean),
-      body: this.extractEmailBody(gmailMessage.payload),
-      htmlBody: this.extractEmailHtmlBody(gmailMessage.payload),
-      attachments: this.extractAttachments(gmailMessage.payload),
-      timestamp: new Date(parseInt(gmailMessage.internalDate || '0')),
-      labels: gmailMessage.labelIds || [],
-      isRead: !gmailMessage.labelIds?.includes('UNREAD'),
-      isImportant: gmailMessage.labelIds?.includes('IMPORTANT') || false
+      body: this.extractEmailBody(payload),
+      htmlBody: this.extractEmailHtmlBody(payload),
+      attachments: this.extractAttachments(payload),
+      timestamp: new Date(parseInt((gmailMessage.internalDate as string) || '0')),
+      labels: (gmailMessage.labelIds as string[]) || [],
+      isRead: !((gmailMessage.labelIds as string[])?.includes('UNREAD')),
+      isImportant: ((gmailMessage.labelIds as string[])?.includes('IMPORTANT')) || false
     };
 
     return emailData;
   }
 
-  private extractEmailBody(payload: any): string {
-    if (payload.body?.data) {
-      return Buffer.from(payload.body.data, 'base64').toString('utf-8');
+  private extractEmailBody(payload: Record<string, unknown>): string {
+    const body = payload.body as Record<string, unknown>;
+    if (body?.data) {
+      return Buffer.from(body.data as string, 'base64').toString('utf-8');
     }
 
-    if (payload.parts) {
-      for (const part of payload.parts) {
-        if (part.mimeType === 'text/plain' && part.body?.data) {
-          return Buffer.from(part.body.data, 'base64').toString('utf-8');
+    const parts = payload.parts as Record<string, unknown>[];
+    if (parts) {
+      for (const part of parts) {
+        const partBody = part.body as Record<string, unknown>;
+        if (part.mimeType === 'text/plain' && partBody?.data) {
+          return Buffer.from(partBody.data as string, 'base64').toString('utf-8');
         }
       }
     }
@@ -161,38 +165,43 @@ export class EmailProcessor {
     return '';
   }
 
-  private extractEmailHtmlBody(payload: any): string | undefined {
-    if (payload.parts) {
-      for (const part of payload.parts) {
-        if (part.mimeType === 'text/html' && part.body?.data) {
-          return Buffer.from(part.body.data, 'base64').toString('utf-8');
+  private extractEmailHtmlBody(payload: Record<string, unknown>): string | undefined {
+    const parts = payload.parts as Record<string, unknown>[];
+    if (parts) {
+      for (const part of parts) {
+        const partBody = part.body as Record<string, unknown>;
+        if (part.mimeType === 'text/html' && partBody?.data) {
+          return Buffer.from(partBody.data as string, 'base64').toString('utf-8');
         }
       }
     }
     return undefined;
   }
 
-  private extractAttachments(payload: any): EmailAttachment[] {
+  private extractAttachments(payload: Record<string, unknown>): EmailAttachment[] {
     const attachments: EmailAttachment[] = [];
 
-    const extractFromParts = (parts: any[]) => {
+    const extractFromParts = (parts: Record<string, unknown>[]) => {
       for (const part of parts) {
-        if (part.filename && part.body?.attachmentId) {
+        const partBody = part.body as Record<string, unknown>;
+        if (part.filename && partBody?.attachmentId) {
           attachments.push({
-            filename: part.filename,
-            mimeType: part.mimeType || 'application/octet-stream',
-            size: part.body.size || 0,
-            attachmentId: part.body.attachmentId
+            filename: part.filename as string,
+            mimeType: (part.mimeType as string) || 'application/octet-stream',
+            size: (partBody.size as number) || 0,
+            attachmentId: partBody.attachmentId as string
           });
         }
-        if (part.parts) {
-          extractFromParts(part.parts);
+        const nestedParts = part.parts as Record<string, unknown>[];
+        if (nestedParts) {
+          extractFromParts(nestedParts);
         }
       }
     };
 
-    if (payload.parts) {
-      extractFromParts(payload.parts);
+    const parts = payload.parts as Record<string, unknown>[];
+    if (parts) {
+      extractFromParts(parts);
     }
 
     return attachments;
@@ -231,8 +240,8 @@ export class EmailProcessor {
     };
   }
 
-  private async sendNotifications(emailData: EmailData, analysis: EmailAnalysis, routing: any) {
-    const recipients = [routing.assignedTo];
+  private async sendNotifications(emailData: EmailData, analysis: EmailAnalysis, routing: Record<string, unknown>) {
+    const recipients = [routing.assignedTo as string];
     const channels = ['slack'];
 
     if (analysis.priorityAssessment.priority === 'urgent') {

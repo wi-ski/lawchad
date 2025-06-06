@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (type === 'event_callback' && event) {
-      await handleSlackEvent(event, res);
+      await handleSlackEvent(event as unknown as Record<string, unknown>, res);
     } else {
       res.status(200).json({ status: 'ok' });
     }
@@ -27,12 +27,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-async function handleSlackEvent(event: any, res: NextApiResponse) {
+async function handleSlackEvent(event: Record<string, unknown>, res: NextApiResponse) {
   try {
     if (event.type === 'message' && !event.bot_id) {
       const response = await openHandsAgent.processAttorneyRequest(
-        event.text || '',
-        event.user || 'unknown'
+        (event.text as string) || '',
+        (event.user as string) || 'unknown'
       );
       
       console.log('Processed Slack message:', response.requestId);

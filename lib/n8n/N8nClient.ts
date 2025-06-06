@@ -168,7 +168,7 @@ export class N8nClient {
     }
   }
 
-  async executeWorkflow(workflowId: string, inputData?: any): Promise<{ success: boolean; executionId?: string; data?: any; error?: string }> {
+  async executeWorkflow(workflowId: string, inputData?: Record<string, unknown>): Promise<{ success: boolean; executionId?: string; data?: Record<string, unknown>; error?: string }> {
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -249,7 +249,7 @@ export class N8nClient {
     }
   }
 
-  async getExecutionStatus(executionId: string): Promise<{ success: boolean; status?: string; data?: any; error?: string }> {
+  async getExecutionStatus(executionId: string): Promise<{ success: boolean; status?: string; data?: Record<string, unknown>; error?: string }> {
     try {
       const response = await this.apiClient.get(`/rest/executions/${executionId}`);
       
@@ -272,7 +272,7 @@ export class N8nClient {
     }
   }
 
-  async waitForExecution(executionId: string, timeoutMs: number = 60000): Promise<{ success: boolean; data?: any; error?: string }> {
+  async waitForExecution(executionId: string, timeoutMs: number = 60000): Promise<{ success: boolean; data?: Record<string, unknown>; error?: string }> {
     const startTime = Date.now();
     const pollInterval = 2000;
     
@@ -294,7 +294,7 @@ export class N8nClient {
     return { success: false, error: 'Execution timeout' };
   }
 
-  async triggerWebhook(webhookPath: string, data: any): Promise<{ success: boolean; response?: any; error?: string }> {
+  async triggerWebhook(webhookPath: string, data: Record<string, unknown>): Promise<{ success: boolean; response?: Record<string, unknown>; error?: string }> {
     try {
       console.log(`🔗 Triggering webhook: ${webhookPath}`);
       
@@ -319,7 +319,7 @@ export class N8nClient {
     }
   }
 
-  async createCredentials(name: string, type: string, data: any): Promise<{ success: boolean; credentialId?: string; error?: string }> {
+  async createCredentials(name: string, type: string, data: Record<string, unknown>): Promise<{ success: boolean; credentialId?: string; error?: string }> {
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -378,7 +378,7 @@ export class N8nClient {
     }
   }
 
-  async getSystemInfo(): Promise<{ success: boolean; info?: any; error?: string }> {
+  async getSystemInfo(): Promise<{ success: boolean; info?: Record<string, unknown>; error?: string }> {
     if (!this.isInitialized) {
       await this.initialize();
     }

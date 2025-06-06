@@ -53,7 +53,7 @@ export class GmailOAuth {
       const credentials: GmailCredentials = {
         clientId: process.env.GOOGLE_CLIENT_ID!,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        redirectUri: this.oauth2Client.redirectUri!,
+        redirectUri: process.env.GOOGLE_REDIRECT_URI!,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token || undefined,
         expiryDate: tokens.expiry_date || undefined
@@ -150,7 +150,7 @@ export class GmailOAuth {
       
       return { 
         success: true, 
-        userEmail: profile.data.emailAddress 
+        userEmail: profile.data.emailAddress || undefined 
       };
     } catch (error) {
       console.error(`❌ Connection test failed for ${attorneyId}:`, error);
